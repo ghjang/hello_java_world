@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v2
@@ -46,7 +46,7 @@ jobs:
       - name: Install GitHub CLI
         run: |
           sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
-          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt-add-repository 'deb [arch=amd64] https://cli.github.com/packages focal main'
           sudo apt update
           sudo apt install gh
 
