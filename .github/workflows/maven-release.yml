@@ -27,14 +27,14 @@ jobs:
           TAG_VERSION=${TAG_VERSION#refs/tags/release-}
 
           echo "hello_world_console_app/target/*.jar :"
-          ls -al hello_world_console_app/target/*.jar
+          ls -l hello_world_console_app/target/*.jar
           
           echo "hello_world_console_app/target/lib :"
-          ls -al hello_world_console_app/target/lib
+          ls -l hello_world_console_app/target/lib
 
           tar -czvf hello_world_java-${TAG_VERSION}.tar.gz \
               -C hello_world_console_app/target \
-              hello_world_console_app*.jar lib
+              "hello_world_console_app*.jar" lib
 
       - name: Read release notes
         id: release_notes
