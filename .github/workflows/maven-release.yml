@@ -25,6 +25,7 @@ jobs:
         run: |
           TAG_VERSION=${{ github.ref }} 
           TAG_VERSION=${TAG_VERSION#refs/tags/release-}
+          echo "TAG_VERSION=${TAG_VERSION}" >> $GITHUB_ENV
 
           echo "hello_world_console_app/target/*.jar :"
           ls -l hello_world_console_app/target/*.jar
@@ -37,32 +38,27 @@ jobs:
           cd ../..
 
       - name: Read release notes
-        id: release_notes
         run: |
-          TAG_VERSION=${{ github.ref }} 
-          TAG_VERSION=${TAG_VERSION#refs/tags/release-} 
-          echo "::set-output name=body::$(cat _release-notes/${TAG_VERSION}.md)"
-          echo "::set-output name=tag_version::${TAG_VERSION}"
+          echo "BODY=$(cat _release-notes/${TAG_VERSION}.md)" >> $GITHUB_ENV
+
+      - name: Install GitHub CLI
+        run: |
+          sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
+          sudo apt-add-repository https://cli.github.com/packages
+          sudo apt update
+          sudo apt install gh
 
       - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ steps.release_notes.outputs.tag_version }}
-          body: ${{ steps.release_notes.outputs.body }}
-          draft: false
-          prerelease: false
+        run: |
+          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          gh release create ${{ github.ref }} \
+            --title "Release ${{ env.TAG_VERSION }}" \
+            --notes "${{ env.BODY }}" \
+            --repo ${{ github.repository }} \
+            --target ${{ github.sha }}
 
       - name: Upload Release Asset
-        id: upload-release-asset 
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./hello_world_java-${{ steps.release_notes.outputs.tag_version }}.tar.gz
-          asset_name: hello_world_java-${{ steps.release_notes.outputs.tag_version }}.tar.gz
-          asset_content_type: application/gzip
+        run: |
+          gh release upload ${{ github.ref }} \
+            ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz \
+            --repo ${{ github.repository }}
