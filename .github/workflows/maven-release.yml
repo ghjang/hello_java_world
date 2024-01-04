@@ -40,7 +40,7 @@ jobs:
         id: release_notes
         run: |
           TAG_VERSION=${{ github.ref }} 
-          TAG_VERSION=${TAG_VERSION#refs/tags/} 
+          TAG_VERSION=${TAG_VERSION#refs/tags/release-} 
           echo "::set-output name=body::$(cat _release-notes/${TAG_VERSION}.md)"
           echo "::set-output name=tag_version::${TAG_VERSION}"
 
