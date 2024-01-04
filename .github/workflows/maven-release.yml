@@ -32,7 +32,9 @@ jobs:
           echo "hello_world_console_app/target/lib :"
           ls -l hello_world_console_app/target/lib
 
-          tar -czvf hello_world_java-${TAG_VERSION}.tar.gz -C hello_world_console_app/target  hello_world_console_app*.jar lib
+          cd hello_world_console_app/target
+          tar -czvf ../../hello_world_java-${TAG_VERSION}.tar.gz hello_world_console_app*.jar lib
+          cd ../..
 
       - name: Read release notes
         id: release_notes
