@@ -39,7 +39,9 @@ jobs:
 
       - name: Read release notes
         run: |
-          echo "BODY=$(cat _release-notes/${TAG_VERSION}.md)" >> $GITHUB_ENV
+          echo "BODY<<EOF" >> $GITHUB_ENV
+          cat _release-notes/${TAG_VERSION}.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Install GitHub CLI
         run: |
