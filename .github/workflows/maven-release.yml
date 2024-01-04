@@ -43,6 +43,13 @@ jobs:
           cat _release-notes/${TAG_VERSION}.md >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+      - name: Combine all release notes
+        run: |
+          for file in $(ls _release-notes/ | sort -rV); do
+            cat _release-notes/$file >> RELEASE_NOTES.txt
+            echo "" >> RELEASE_NOTES.txt
+          done
+
       - name: Install GitHub CLI
         run: |
           sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key C99B11DEB97541F0
@@ -64,4 +71,10 @@ jobs:
         run: |
           gh release upload release-${{ env.TAG_VERSION }} \
             ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz \
+            --repo ${{ github.repository }}
+
+      - name: Upload Release Notes
+        run: |
+          gh release upload release-${{ env.TAG_VERSION }} \
+            RELEASE_NOTES.txt \
             --repo ${{ github.repository }}
