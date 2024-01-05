@@ -56,21 +56,27 @@ jobs:
       - name: Get milestone number
         run: |
           MILESTONE_NUMBER=$(gh api repos/${{ github.repository }}/milestones --jq ".[] | select(.title==\"${{ env.TAG_VERSION }}\") | .number")
-          if [ -z "$MILESTONE_NUMBER" ]; then
-            echo "The milestone for the release number ${{ env.TAG_VERSION }} is missing. The build has been stopped."
-            exit 1
-          fi
           echo "MILESTONE_NUMBER=${MILESTONE_NUMBER}" >> $GITHUB_ENV
 
       - name: Get issues for the milestone
         run: |
-          gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=all > issues.json
+          if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
+            gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed > issues.json
+            jq '[.[] | select(.state=="closed" and (any(.labels[]; .name=="duplicate" or .name=="invalid" or .name=="wontfix") | not))]' issues.json > filtered_issues.json
+            mv filtered_issues.json issues.json
+          else
+            echo "[]" > issues.json
+          fi
 
       - name: Create individual release notes
         run: |
           echo "## ${{ env.TAG_VERSION }} ($(date +%Y-%m-%d))" > _release-notes/${{ env.TAG_VERSION }}.md
           echo "" >> _release-notes/${{ env.TAG_VERSION }}.md
-          jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}.md
+          if [ $(jq length issues.json) -eq 0 ]; then
+            echo "- 해당 릴리즈와 관련된 이슈가 없습니다." >> _release-notes/${{ env.TAG_VERSION }}.md
+          else
+            jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}.md
+          fi
 
       - name: Commit and push release notes
         run: |
