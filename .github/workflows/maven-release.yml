@@ -61,11 +61,11 @@ jobs:
       - name: Get issues for the milestone
         run: |
           if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
-            ISSUES=$(gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed)
+            ISSUES=$(gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }})
             echo "ISSUES value:"
             echo "$ISSUES"
             if [ "$ISSUES" != "null" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "[\n]" ] && [ "$ISSUES" != "[\n\n]" ]; then
-              echo $ISSUES > all_issues.json
+              echo $ISSUES | jq '[.[] | select(.state=="closed")]' > all_issues.json
               ALL_ISSUE_COUNT=$(jq length all_issues.json)
               echo "해당 릴리즈와 관련된 closed 상태의 모든 이슈가 $ALL_ISSUE_COUNT개 있습니다."
               echo $ISSUES | jq '[.[] | select(.state=="closed" and (any(.labels[]; .name=="duplicate" or .name=="invalid" or .name=="wontfix") | not))]' > issues.json
