@@ -76,7 +76,7 @@ jobs:
           echo "## ${{ env.TAG_VERSION }} ($(date +%Y-%m-%d))" > _release-notes/${{ env.TAG_VERSION }}.md
           echo "" >> _release-notes/${{ env.TAG_VERSION }}.md
           if [ $(jq length issues.json) -eq 0 ]; then
-            echo "- 해당 릴리즈와 관련된 이슈가 없습니다." >> _release-notes/${{ env.TAG_VERSION }}.md
+            echo "- 해당 릴리즈와 관련된 정상 처리된 이슈가 없습니다." >> _release-notes/${{ env.TAG_VERSION }}.md
           else
             jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}.md
           fi
