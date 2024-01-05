@@ -79,7 +79,7 @@ jobs:
           git fetch origin main:main
           git checkout main
           git add _release-notes/${{ env.TAG_VERSION }}.md
-          git diff --exit-code --quiet || git commit -m "Add release notes for version ${{ env.TAG_VERSION }}"
+          if [[ $(git status --porcelain) ]]; then git commit -m "Add release notes for version ${{ env.TAG_VERSION }}"; fi
           git push origin main
 
       - name: Create combined release notes
