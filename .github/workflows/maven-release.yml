@@ -49,6 +49,7 @@ jobs:
 
       - name: Set up GitHub CLI
         run: |
+          mkdir -p ~/.config/gh
           echo "github.com:" > ~/.config/gh/hosts.yml
           echo "  oauth_token: ${{ secrets.GITHUB_TOKEN }}" >> ~/.config/gh/hosts.yml
 
