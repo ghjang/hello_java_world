@@ -63,11 +63,18 @@ jobs:
           if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
             ISSUES=$(gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed)
             if [ "$ISSUES" != "null" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "[\n]" ] && [ "$ISSUES" != "[\n\n]" ]; then
+              echo $ISSUES > all_issues.json
+              ALL_ISSUE_COUNT=$(jq length all_issues.json)
+              echo "해당 릴리즈와 관련된 closed 상태의 모든 이슈가 $ALL_ISSUE_COUNT개 있습니다."
               echo $ISSUES | jq '[.[] | select(.state=="closed" and (any(.labels[]; .name=="duplicate" or .name=="invalid" or .name=="wontfix") | not))]' > issues.json
+              FILTERED_ISSUE_COUNT=$(jq length issues.json)
+              echo "필터링된 closed 상태의 이슈가 $FILTERED_ISSUE_COUNT개 있습니다."
             else
+              echo "해당 릴리즈와 관련된 이슈가 없습니다."
               echo "[]" > issues.json
             fi
           else
+            echo "해당 릴리즈와 관련된 마일스톤이 없습니다."
             echo "[]" > issues.json
           fi
 
