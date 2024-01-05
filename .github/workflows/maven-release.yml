@@ -61,9 +61,12 @@ jobs:
       - name: Get issues for the milestone
         run: |
           if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
-            gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed > issues.json
-            jq '[.[] | select(.state=="closed" and (any(.labels[]; .name=="duplicate" or .name=="invalid" or .name=="wontfix") | not))]' issues.json > filtered_issues.json
-            mv filtered_issues.json issues.json
+            ISSUES=$(gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed)
+            if [ "$ISSUES" != "null" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "[\n]" ] && [ "$ISSUES" != "[\n\n]" ]; then
+              echo $ISSUES | jq '[.[] | select(.state=="closed" and (any(.labels[]; .name=="duplicate" or .name=="invalid" or .name=="wontfix") | not))]' > issues.json
+            else
+              echo "[]" > issues.json
+            fi
           else
             echo "[]" > issues.json
           fi
