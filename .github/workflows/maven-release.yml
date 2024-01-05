@@ -62,6 +62,8 @@ jobs:
         run: |
           if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
             ISSUES=$(gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed)
+            echo "ISSUES value:"
+            echo "$ISSUES"
             if [ "$ISSUES" != "null" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "[\n]" ] && [ "$ISSUES" != "[\n\n]" ]; then
               echo $ISSUES > all_issues.json
               ALL_ISSUE_COUNT=$(jq length all_issues.json)
