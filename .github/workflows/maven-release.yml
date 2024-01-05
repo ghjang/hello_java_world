@@ -81,7 +81,6 @@ jobs:
           git add _release-notes/${{ env.TAG_VERSION }}.md
           git diff --exit-code --quiet || git commit -m "Add release notes for version ${{ env.TAG_VERSION }}"
           git push origin main
-          git checkout ${{ github.ref }}
 
       - name: Create combined release notes
         run: |
