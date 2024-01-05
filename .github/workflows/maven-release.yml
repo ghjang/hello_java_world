@@ -76,8 +76,8 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git fetch origin main:main
           git checkout main
-          git pull
           git add _release-notes/${{ env.TAG_VERSION }}.md
           git diff --exit-code --quiet || git commit -m "Add release notes for version ${{ env.TAG_VERSION }}"
           git push origin main
