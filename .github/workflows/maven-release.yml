@@ -18,15 +18,17 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
 
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
-
-      - name: Create tar.gz
+      - name: Set TAG_VERSION
         run: |
           TAG_VERSION=${{ github.ref }} 
           TAG_VERSION=${TAG_VERSION#refs/tags/release-}
           echo "TAG_VERSION=${TAG_VERSION}" >> $GITHUB_ENV
 
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
+      - name: Create tar.gz
+        run: |
           echo "hello_world_console_app/target/*.jar :"
           ls -l hello_world_console_app/target/*.jar
           
@@ -34,21 +36,8 @@ jobs:
           ls -l hello_world_console_app/target/lib
 
           cd hello_world_console_app/target
-          tar -czvf ../../hello_world_java-${TAG_VERSION}.tar.gz hello_world_console_app*.jar lib
+          tar -czvf ../../hello_world_java-${{ env.TAG_VERSION }}.tar.gz hello_world_console_app*.jar lib
           cd ../..
-
-      - name: Read release notes
-        run: |
-          echo "BODY<<EOF" >> $GITHUB_ENV
-          cat _release-notes/${TAG_VERSION}.md >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Combine all release notes
-        run: |
-          for file in $(ls _release-notes/ | sort -rV); do
-            cat _release-notes/$file >> RELEASE_NOTES.txt
-            echo "" >> RELEASE_NOTES.txt
-          done
 
       - name: Install GitHub CLI
         run: |
@@ -58,12 +47,52 @@ jobs:
           sudo apt update
           sudo apt install gh
 
+      - name: Set up GitHub CLI
+        run: |
+          echo "github.com:" > ~/.config/gh/hosts.yml
+          echo "  oauth_token: ${{ secrets.GITHUB_TOKEN }}" >> ~/.config/gh/hosts.yml
+
+      - name: Get milestone number
+        run: |
+          MILESTONE_NUMBER=$(gh api repos/${{ github.repository }}/milestones --jq ".[] | select(.title==\"${{ env.TAG_VERSION }}\") | .number")
+          if [ -z "$MILESTONE_NUMBER" ]; then
+            echo "The milestone for the release number ${{ env.TAG_VERSION }} is missing. The build has been stopped."
+            exit 1
+          fi
+          echo "MILESTONE_NUMBER=${MILESTONE_NUMBER}" >> $GITHUB_ENV
+
+      - name: Get issues for the milestone
+        run: |
+          gh api repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=all > issues.json
+
+      - name: Create individual release notes
+        run: |
+          echo "## ${{ env.TAG_VERSION }} ($(date +%Y-%m-%d))" > _release-notes/${{ env.TAG_VERSION }}.md
+          echo "" >> _release-notes/${{ env.TAG_VERSION }}.md
+          jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}.md
+
+      - name: Commit and push release notes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add _release-notes/${{ env.TAG_VERSION }}.md
+          git diff --exit-code --quiet || git commit -m "Add release notes for version ${{ env.TAG_VERSION }}"
+          git push
+
+      - name: Create combined release notes
+        run: |
+          REPO_NAME=${{ github.repository#*/ }}
+          echo "# '${REPO_NAME}' Release Notes" > RELEASES_NOTES.md
+          echo "" >> RELEASES_NOTES.md
+          find _release-notes -name "*.md" -print0 | \
+          sort -zrV | \
+          xargs -0 -I{} sh -c 'cat {}; echo ""' >> RELEASES_NOTES.md
+
       - name: Create Release
         run: |
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
           gh release create ${{ github.ref }} \
             --title "Release ${{ env.TAG_VERSION }}" \
-            --notes "${{ env.BODY }}" \
+            --notes-file _release-notes/${{ env.TAG_VERSION }}.md \
             --repo ${{ github.repository }} \
             --target ${{ github.sha }}
 
@@ -73,8 +102,8 @@ jobs:
             ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz \
             --repo ${{ github.repository }}
 
-      - name: Upload Release Notes
+      - name: Upload Combined Release Notes
         run: |
           gh release upload release-${{ env.TAG_VERSION }} \
-            RELEASE_NOTES.txt \
+            RELEASES_NOTES.md \
             --repo ${{ github.repository }}
