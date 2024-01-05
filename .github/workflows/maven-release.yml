@@ -58,20 +58,19 @@ jobs:
           MILESTONE_NUMBER=$(gh api repos/${{ github.repository }}/milestones --jq ".[] | select(.title==\"${{ env.TAG_VERSION }}\") | .number")
           echo "MILESTONE_NUMBER=${MILESTONE_NUMBER}" >> $GITHUB_ENV
 
-      - name: Get issues for the milestone
+      - name: Get closed issues for the milestone
         run: |
           if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
             ISSUES=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                           -H "Accept: application/vnd.github.v3+json" \
-                          "https://api.github.com/repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=all")
-            echo "$ISSUES" > all_issues.txt
+                          "https://api.github.com/repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed")
+            echo "$ISSUES" > closed_issues.txt
             echo "ISSUES value:"
-            cat all_issues.txt
+            cat closed_issues.txt
             if [ "$ISSUES" != "null" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "[\n]" ] && [ "$ISSUES" != "[\n\n]" ]; then
-              echo $ISSUES | jq '[.[] | select(.state=="closed")]' > all_closed_issues.json
-              ALL_CLOSED_ISSUE_COUNT=$(jq length all_closed_issues.json)
+              ALL_CLOSED_ISSUE_COUNT=$(jq length closed_issues.txt)
               echo "해당 릴리즈와 관련된 closed 상태의 모든 이슈가 $ALL_CLOSED_ISSUE_COUNT개 있습니다."
-              echo $ISSUES | jq '[.[] | select(.state=="closed" and (any(.labels[]; .name=="duplicate" or .name=="wontfix") | not))]' > issues.json
+              echo $ISSUES | jq '[.[] | select(any(.labels[]; .name=="invalid" or .name=="duplicate" or .name=="wontfix") | not)]' > issues.json
               FILTERED_CLOSED_ISSUE_COUNT=$(jq length issues.json)
               echo "필터링된 closed 상태의 이슈가 $FILTERED_CLOSED_ISSUE_COUNT개 있습니다."
             else
