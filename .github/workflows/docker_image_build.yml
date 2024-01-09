@@ -1,0 +1,45 @@
+name: Build Docker Image using alpine.sh and Push to GitHub Packages
+
+on:
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE_NAME: alpine-3.19-for-java17-build
+  DOCKER_IMAGE_TAG: 3.19-latest
+  DOCKER_FILE: Dockerfile-alpine
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to GitHub Docker Registry
+      uses: docker/login-action@v1 
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set execute permissions for alpine.sh
+      run: chmod +x _docker_image_build/alpine.sh
+
+    - name: Run alpine.sh
+      run: |
+        cd _docker_image_build
+        ./alpine.sh \
+        ${{ env.DOCKER_IMAGE_NAME }} \
+        ${{ env.DOCKER_IMAGE_TAG }} \
+        ${{ env.DOCKER_FILE }}
+
+    - name: Push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: ghcr.io/${{ github.repository }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
