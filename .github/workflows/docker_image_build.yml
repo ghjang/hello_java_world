@@ -43,4 +43,4 @@ jobs:
         context: .
         push: true
         tags: ghcr.io/${{ github.repository }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_IMAGE_TAG }}
-        dockerfile: _docker_image_build/${{ env.DOCKER_FILE }}
+        file: _docker_image_build/${{ env.DOCKER_FILE }}
