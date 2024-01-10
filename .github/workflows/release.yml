@@ -15,14 +15,8 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      # `actions/checkout@v2` 액션은 기본적으로 Git 저장소의 `.git` 디렉토리를 체크아웃하지 않는다.
-      # 그러나 `git config --local` 명령을 사용하려면 `.git` 디렉토리가 필요하다. 따라서 `fetch-depth`
-      # 옵션을 `1`로 설정하여 최근 커밋과 `.git` 디렉토리를 체크아웃하도록 한다. 도커 컨테이너에서 빌드를
-      # 할때 필요한 옵션 설정이다. 도커 컨테이너에서 실행하지 않을때는 액션의 러너에서 자동으로 메타정보로
-      # `.git` 정보를 가져오기 때문에 `fetch-depth` 옵션을 설정하지 않아도 된다.
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Set TAG_VERSION
         run: |
@@ -101,8 +95,12 @@ jobs:
             jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}_TMP.md
           fi
 
-      - name: Check if inside Git work tree
-        run: git rev-parse --is-inside-work-tree
+      # 체크아웃된 현재 작업 위치의 소스 폴더가 Git 저장소로 인식되지 않는 문제 해결을 위해
+      # 아래와 같이 'safe.directory'를 설정한다.
+      - name: Add safe directory and check if inside Git work tree
+        run: |
+          git config --global --add safe.directory $(pwd)
+          git rev-parse --is-inside-work-tree
 
       - name: Commit and push release notes
         run: |
