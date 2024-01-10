@@ -101,6 +101,9 @@ jobs:
             jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}_TMP.md
           fi
 
+      - name: Check if inside Git work tree
+        run: git rev-parse --is-inside-work-tree
+
       - name: Commit and push release notes
         run: |
           echo "pwd: $(pwd)"
