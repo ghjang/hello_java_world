@@ -104,6 +104,7 @@ jobs:
       - name: Commit and push release notes
         run: |
           echo "pwd: $(pwd)"
+          ls -al
 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
