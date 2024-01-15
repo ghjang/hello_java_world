@@ -50,80 +50,18 @@ jobs:
           tar -czvf ../../../hello_world_java-${{ env.TAG_VERSION }}.tar.gz hello_world_console_app*.jar lib
           cd ../../..
 
+      - name: Create Release Notes
+        uses: ghjang/actions/gen-release-notes@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-repository: ${{ github.repository }}
+          tag-version: ${{ env.TAG_VERSION }}
+
       - name: Set up GitHub CLI
         run: |
           mkdir -p ~/.config/gh
           echo "github.com:" > ~/.config/gh/hosts.yml
           echo "  oauth_token: ${{ secrets.GITHUB_TOKEN }}" >> ~/.config/gh/hosts.yml
-
-      - name: Get milestone number
-        run: |
-          MILESTONE_NUMBER=$(gh api repos/${{ github.repository }}/milestones --jq ".[] | select(.title==\"${{ env.TAG_VERSION }}\") | .number")
-          echo "MILESTONE_NUMBER=${MILESTONE_NUMBER}" >> $GITHUB_ENV
-
-      - name: Get closed issues for the milestone
-        run: |
-          if [ -n "${{ env.MILESTONE_NUMBER }}" ]; then
-            ISSUES=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                          -H "Accept: application/vnd.github.v3+json" \
-                          "https://api.github.com/repos/${{ github.repository }}/issues?milestone=${{ env.MILESTONE_NUMBER }}&state=closed")
-            echo "$ISSUES" > closed_issues.txt
-            echo "ISSUES value:"
-            cat closed_issues.txt
-            if [ "$ISSUES" != "null" ] && [ "$ISSUES" != "[]" ] && [ "$ISSUES" != "[\n]" ] && [ "$ISSUES" != "[\n\n]" ]; then
-              ALL_CLOSED_ISSUE_COUNT=$(jq length closed_issues.txt)
-              echo "해당 릴리즈와 관련된 closed 상태의 모든 이슈가 $ALL_CLOSED_ISSUE_COUNT개 있습니다."
-              echo $ISSUES | jq '[.[] | select(any(.labels[]; .name=="invalid" or .name=="duplicate" or .name=="wontfix") | not)]' > issues.json
-              FILTERED_CLOSED_ISSUE_COUNT=$(jq length issues.json)
-              echo "필터링된 closed 상태의 이슈가 $FILTERED_CLOSED_ISSUE_COUNT개 있습니다."
-            else
-              echo "해당 릴리즈와 관련된 이슈가 없습니다."
-              echo "[]" > issues.json
-            fi
-          else
-            echo "해당 릴리즈와 관련된 마일스톤이 없습니다."
-            echo "[]" > issues.json
-          fi
-
-      - name: Create individual release notes
-        run: |
-          echo "## ${{ env.TAG_VERSION }} ($(date +%Y-%m-%d))" > _release-notes/${{ env.TAG_VERSION }}.md
-          echo "" >> _release-notes/${{ env.TAG_VERSION }}_TMP.md
-          if [ $(jq length issues.json) -eq 0 ]; then
-            echo "- 해당 릴리즈와 관련된 정상 처리된 이슈가 없습니다." >> _release-notes/${{ env.TAG_VERSION }}_TMP.md
-          else
-            jq -r '.[] | "- Issue #\(.number): \(.title)"' issues.json >> _release-notes/${{ env.TAG_VERSION }}_TMP.md
-          fi
-
-      # 체크아웃된 현재 작업 위치의 소스 폴더가 Git 저장소로 인식되지 않는 문제 해결을 위해
-      # 아래와 같이 'safe.directory'를 설정한다.
-      - name: Add safe directory and check if inside Git work tree
-        run: |
-          git config --global --add safe.directory $(pwd)
-          git rev-parse --is-inside-work-tree
-
-      - name: Commit and push release notes
-        run: |
-          echo "pwd: $(pwd)"
-          ls -al
-
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git fetch origin main:main
-          git checkout main
-          mv _release-notes/${{ env.TAG_VERSION }}_TMP.md _release-notes/${{ env.TAG_VERSION }}.md
-          git add _release-notes/${{ env.TAG_VERSION }}.md
-          if [[ $(git diff --name-only --cached) ]]; then git commit -m "Add release notes for version ${{ env.TAG_VERSION }}"; fi
-          git push origin main
-
-      - name: Create combined release notes
-        run: |
-          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-          echo "# '${REPO_NAME}' Release Notes" > RELEASES_NOTES.md
-          echo "" >> RELEASES_NOTES.md
-          find _release-notes -name "*.md" -print0 | \
-          sort -zrV | \
-          xargs -0 -I{} sh -c 'cat {}; echo ""' >> RELEASES_NOTES.md
 
       - name: Create Release
         run: |
