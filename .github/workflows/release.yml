@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container: 
-      image: ghcr.io/${{ github.repository }}/alpine-3.19-for-java17-build:3.19-latest
+      image: ghcr.io/${{ github.repository_owner }}/dockers/alpine-3.19-with-jdk17-build-env:3.19-latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
