@@ -50,6 +50,9 @@ jobs:
           tar -czvf ../../../hello_world_java-${{ env.TAG_VERSION }}.tar.gz hello_world_console_app*.jar lib
           cd ../../..
 
+      # NOTE: 도커 컨테이너를 사용하도록 구성된 커스텀 액션의 경우 컨테이너에게 'GITHUB_REPOSITORY', 'TAG_VERSION' 등의
+      #       환경 변수는 자동으로 전달된다. 하지만 'GITHUB_TOKEN' 환경 변수는 보안상의 이유로 자동으로 전달되지 않는다.
+      #       따라서 커스텀 액션에서 'GITHUB_TOKEN' 환경 변수를 사용하려면 명시적으로 전달해야 한다.
       - name: Create Release Notes
         uses: ghjang/actions/gen-release-notes@main
         env:
