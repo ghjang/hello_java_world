@@ -52,10 +52,6 @@ jobs:
 
       - name: Create Release Notes
         uses: ghjang/actions/gen-release-notes@main
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-repository: ${{ github.repository }}
-          tag-version: ${{ env.TAG_VERSION }}
 
       - name: Set up GitHub CLI
         run: |
