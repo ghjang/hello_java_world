@@ -14,11 +14,13 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    # 참고로 각 step은 별도의 쉘에서 실행된다. 따라서 이전 step에서 'cd' 명령을 사용하여 디렉토리를
+    # 변경하더라도 다음 step에서는 이전 step에서 변경한 디렉토리로 이동되지 않는다.
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set TAG_VERSION
+      - name: Set TAG_VERSION environment variable
         run: |
           TAG_VERSION=${{ github.ref }} 
           TAG_VERSION=${TAG_VERSION#refs/tags/release-}
@@ -29,26 +31,8 @@ jobs:
           cd projects
           mvn -B package --file pom.xml
 
-      # 참고로 각 step은 별도의 쉘에서 실행된다. 따라서 이전 step에서 'cd' 명령을 사용하여 디렉토리를
-      # 변경하더라도 다음 step에서는 이전 step에서 변경한 디렉토리로 이동되지 않는다.
-      - name: Create tar.gz
-        run: |
-          cd projects
-
-          echo "pwd: $(pwd)"
-
-          echo "hello_world_console_app/target :"
-          ls -l hello_world_console_app/target
-
-          echo "hello_world_console_app/target/*.jar :"
-          ls -l hello_world_console_app/target/*.jar
-          
-          echo "hello_world_console_app/target/lib :"
-          ls -l hello_world_console_app/target/lib
-
-          cd hello_world_console_app/target
-          tar -czvf ../../../hello_world_java-${{ env.TAG_VERSION }}.tar.gz hello_world_console_app*.jar lib
-          cd ../../..
+      - name: Create tar.gz file for release
+        uses: ./.github/actions/create-tar-gz
 
       # NOTE: 도커 컨테이너를 사용하도록 구성된 커스텀 액션의 경우 컨테이너에게 'GITHUB_REPOSITORY', 'TAG_VERSION' 등의
       #       환경 변수는 자동으로 전달된다. 하지만 'GITHUB_TOKEN' 환경 변수는 보안상의 이유로 자동으로 전달되지 않는다.
@@ -58,6 +42,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # NOTE: GitHub CLI를 사용하려면 GitHub 저장소 인증 정보가 필요하다. 인증 정보를 전달하는 가장 간단한 방법은
+      #       'GH_TOKEN' 환경 변수에 저장소 인증 토큰인 'GITHUB_TOKEN'을 할당한 후에 'gh'등의 명령어를 사용하는 것이다.
+      #       GitHub Actions Workflow의 각 step은 별도의 서브 쉘에서 실행되는 것이기 때문에 이 방법을 이용하고자 할 경우
+      #       각 스텝별로 'GH_TOKEN' 환경변수를 설정해야하는 번거로움이 있다. 해서 여기서는 'hosts.yml' 파일을 생성하여
+      #       GitHub CLI가 사용할 저장소 인증 토큰을 설정하는 방법을 사용했다.
       - name: Set up GitHub CLI
         run: |
           mkdir -p ~/.config/gh
@@ -67,19 +56,19 @@ jobs:
       - name: Create Release
         run: |
           gh release create ${{ github.ref }} \
-            --title "Release ${{ env.TAG_VERSION }}" \
-            --notes-file _release-notes/${{ env.TAG_VERSION }}.md \
-            --repo ${{ github.repository }} \
-            --target ${{ github.sha }}
+                      --repo ${{ github.repository }} \
+                      --target ${{ github.sha }} \
+                      --title "Release ${{ env.TAG_VERSION }}" \
+                      --notes-file ./_release-notes/${{ env.TAG_VERSION }}.md
 
       - name: Upload Release Asset
         run: |
-          gh release upload release-${{ env.TAG_VERSION }} \
-            ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz \
-            --repo ${{ github.repository }}
+          gh release upload ${{ github.ref }} \
+                      --repo ${{ github.repository }} \
+                      ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz
 
       - name: Upload Combined Release Notes
         run: |
-          gh release upload release-${{ env.TAG_VERSION }} \
-            RELEASES_NOTES.md \
-            --repo ${{ github.repository }}
+          gh release upload ${{ github.ref }} \
+                      --repo ${{ github.repository }} \
+                      ./RELEASES_NOTES.md
