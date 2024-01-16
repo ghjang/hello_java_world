@@ -1,5 +1,5 @@
-name: 'Create tar.gz'
-description: "Create a tar.gz file from the 'target' folder"
+name: Create tar.gz
+description: Create a tar.gz file from the 'target' folder
 
 runs:
   # 'Composite Run Steps'라는 기능을 사용해 작성된 커스텀 액션이다.
@@ -7,13 +7,13 @@ runs:
   # NOTE: 'Composite Run Steps'를 정의하는 '.yml' 파일에서는 아래 'steps' 전역 레벨에서 참조 가능한
   #       '환경변수'를 정의할 수 없다. 'GITHUB_ENV' 환경 변수를 사용할수도 없다. 해서 아래와 같이 공통된
   #       쉘 스크립트 파일을 경로를 중복해서 하드코딩했다.
-  using: 'composite'
+  using: composite
 
   steps:
-    - name: 'Set execute permissions for script'
+    - name: Set execute permissions for script
       run: chmod +x ./.github/actions/create-tar-gz/create.sh
       shell: sh
 
-    - name: 'Run tar command'
+    - name: Run tar command
       run: ./.github/actions/create-tar-gz/create.sh
       shell: sh
