@@ -9,4 +9,4 @@ runs:
   steps:
     - name: 'Run tar command'
       shell: sh
-      run: ./create.sh
+      run: ./.github/actions/create-tar-gz/create.sh

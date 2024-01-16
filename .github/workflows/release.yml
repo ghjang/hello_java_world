@@ -54,12 +54,24 @@ jobs:
           cd projects
           mvn -B package --file pom.xml
 
+      # NOTE: 쉘 스크립트를 실행하거나 도커 컨테이너를 사용하도록 구성된 커스텀 액션의 경우 'GITHUB_REPOSITORY'등과 같은
+      #       워크플로우 job에 정의된 기본 환경변수와 'TAG_VERSION' 등의 사용자가 직접 설정한 환경변수값은 자동으로 전달된다.
+      #       하지만 'GITHUB_TOKEN' 환경변수는 보안상의 이유로 자동으로 전달되지 않는다. 따라서 커스텀 액션에서 사용이 필요한
+      #       경우에 'GITHUB_TOKEN' 환경변수 값을 명시적으로 전달해야 한다.
+      #
+      #       워크플로우 job에 정의된 기본 환경변수와 사용자 정의된 환경변수를 '.yml' 파일 자체에서 참조하는 문법은 다음과 같다:
+      #         - ${{ github.<환경변수명> }} : 워크플로우 job에 정의된 기본 환경변수 참조. ex.> ${{ github.repository }}
+      #         - ${{ env.<환경변수명> }} : 사용자가 직접 정의한 환경변수 참조. ex.> ${{ env.TAG_VERSION }}
+      #
+      #       커스텀 액션의 쉘 스크립트나 도커 컨테이너내에서는 전달된 환경변수를 '$<환경변수명>' 형태로 참조할 수 있다:
+      #         - $GITHUB_<환경변수명> : 워크플로우 job에 정의된 기본 환경변수 참조. 환경변수명이 '대문자'로 바뀌어 있다.
+      #                               ex.> $GITHUB_REPOSITORY
+      #         - $<환경변수명> : 사용자가 직접 정의한 환경변수 참조. 'env.'과 같은 접두어는 필요없다.
+      #                        ex.> $TAG_VERSION
+
       - name: Create tar.gz file for release
         uses: ./.github/actions/create-tar-gz
 
-      # NOTE: 도커 컨테이너를 사용하도록 구성된 커스텀 액션의 경우도 컨테이너에게 'GITHUB_REPOSITORY', 'TAG_VERSION' 등의
-      #       job의 기본 환경 변수는 자동으로 전달된다. 하지만 'GITHUB_TOKEN' 환경 변수는 보안상의 이유로 자동으로 전달되지 않는다.
-      #       따라서 이 경우 커스텀 액션에서 'GITHUB_TOKEN' 환경 변수를 사용하려면 명시적으로 전달해야 한다.
       - name: Create Release Notes
         uses: ghjang/actions/gen-release-notes@main
         env:
