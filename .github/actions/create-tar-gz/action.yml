@@ -1,25 +1,12 @@
 # NOTE: 'Composite Run Steps'라는 기능을 사용해 작성된 커스텀 액션
 name: 'Create tar.gz'
-description: 'Create a tar.gz file'
+description: "Create a tar.gz file from the 'target' folder"
+
 runs:
   using: 'composite'
+
+  # NOTE: 여러개의 step을 실행할 수도 있다.
   steps:
-    - run: |
-        cd projects
-
-        echo "pwd: $(pwd)"
-
-        echo "hello_world_console_app/target :"
-        ls -l hello_world_console_app/target
-
-        echo "hello_world_console_app/target/*.jar :"
-        ls -l hello_world_console_app/target/*.jar
-        
-        echo "hello_world_console_app/target/lib :"
-        ls -l hello_world_console_app/target/lib
-
-        cd hello_world_console_app/target
-        tar -czvf ../../../hello_world_java-${{ env.TAG_VERSION }}.tar.gz hello_world_console_app*.jar lib
-        cd ../../..
-        ls -l *.tar.gz
+    - name: 'Run tar command'
       shell: sh
+      run: ./create.sh
