@@ -9,11 +9,11 @@ runs:
   #       쉘 스크립트 파일을 경로를 중복해서 하드코딩했다.
   using: 'composite'
 
-steps:
-  - name: 'Set execute permissions for script'
-    run: chmod +x ./.github/actions/create-tar-gz/create.sh
-    shell: sh
+  steps:
+    - name: 'Set execute permissions for script'
+      run: chmod +x ./.github/actions/create-tar-gz/create.sh
+      shell: sh
 
-  - name: 'Run tar command'
-    run: ./.github/actions/create-tar-gz/create.sh
-    shell: sh
+    - name: 'Run tar command'
+      run: ./.github/actions/create-tar-gz/create.sh
+      shell: sh
