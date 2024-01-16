@@ -23,11 +23,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set TAG_VERSION environment variable
+      - name: Set environment variables
         run: |
           TAG_VERSION=${{ github.ref }} 
           TAG_VERSION=${TAG_VERSION#refs/tags/release-}
           echo "TAG_VERSION=${TAG_VERSION}" >> $GITHUB_ENV
+
+          TAG_NAME=${{ github.ref }}
+          TAG_NAME=${TAG_NAME#refs/tags/}
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
 
       - name: Build with Maven
         run: |
@@ -66,12 +70,12 @@ jobs:
 
       - name: Upload Release Asset
         run: |
-          gh release upload ${{ github.ref }} \
+          gh release upload ${{ env.TAG_NAME }} \
                       --repo ${{ github.repository }} \
                       ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz
 
       - name: Upload Combined Release Notes
         run: |
-          gh release upload ${{ github.ref }} \
+          gh release upload ${{ env.TAG_NAME }} \
                       --repo ${{ github.repository }} \
                       ./RELEASES_NOTES.md
