@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # NOTE: 사용하는 'Alpine Linux' 도커 컨테이너에 설치된 shell은 'ash'쉘이다. 컨테이너내에서 '/bin/sh'를 실행하면
+    #       'ash'가 실행된다. 따라서 아래 각 step에서 사용되는 기본 쉘은 'ash'라는 것에 유의해야 한다.
     container: 
       image: ghcr.io/${{ github.repository_owner }}/dockers/alpine-3.19-with-jdk17-build-env:3.19-latest
       credentials:

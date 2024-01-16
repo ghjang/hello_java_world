@@ -21,4 +21,4 @@ runs:
         cd hello_world_console_app/target
         tar -czvf ../../../hello_world_java-${{ env.TAG_VERSION }}.tar.gz hello_world_console_app*.jar lib
         cd ../../..
-      shell: bash
+      shell: sh
