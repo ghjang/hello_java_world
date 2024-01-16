@@ -3,19 +3,17 @@ description: "Create a tar.gz file from the 'target' folder"
 
 runs:
   # 'Composite Run Steps'라는 기능을 사용해 작성된 커스텀 액션이다.
+  #
+  # NOTE: 'Composite Run Steps'를 정의하는 '.yml' 파일에서는 아래 'steps' 전역 레벨에서 참조 가능한
+  #       '환경변수'를 정의할 수 없다. 'GITHUB_ENV' 환경 변수를 사용할수도 없다. 해서 아래와 같이 공통된
+  #       쉘 스크립트 파일을 경로를 중복해서 하드코딩했다.
   using: 'composite'
-
-  # 'runs' 하위 레벨에 지정된 'env'를 통해서 설정하는 환경변수는 모든 step에서 참조할 수 있다. 하지만 'env'를 통해서
-  # 설정하는 방식에서는 '수정된 환경변수 값 설정'을 할 수 없다. 쉘 스크립트 형태와 같은 동적인 값 조작을 할 수 없다는 것이다.
-  # 동적인 값 조작이 필요한 경우는 특정 step에서 적절한 쉘 스크립트 코드와 'GITHUB_ENV'를 사용하는 방식으로 후속 step에서
-  # '${{ env.<환경변수명> }}'와 같은 방식으로 참조할 수 있게 환경변수를 정의할 수 있다.
-  env:
-    SCRIPT_PATH: ./.github/actions/create-tar-gz/create.sh
 
 steps:
   - name: 'Set execute permissions for script'
-    run: chmod +x ${SCRIPT_PATH}
+    run: chmod +x ./.github/actions/create-tar-gz/create.sh
+    shell: sh
 
   - name: 'Run tar command'
+    run: ./.github/actions/create-tar-gz/create.sh
     shell: sh
-    run: ${SCRIPT_PATH}
