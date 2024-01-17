@@ -47,6 +47,9 @@ jobs:
           TAG_NAME=${TAG_NAME#refs/tags/}
           echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
 
+          BUILD_OUTPUT_FILE=hello_world_java-${TAG_VERSION}.tar.gz
+          echo "BUILD_OUTPUT_FILE=${BUILD_OUTPUT_FILE}" >> $GITHUB_ENV
+
           cat $GITHUB_ENV
 
       - name: Build with Maven
@@ -72,6 +75,8 @@ jobs:
       # '메이븐'으로 빌드한 결과물을 'tar.gz' 파일로 압축한다.
       - name: Create tar.gz file for release
         uses: ./.github/actions/create-tar-gz
+        with:
+          buildOutputFile: ${{ env.BUILD_OUTPUT_FILE }}
 
       # '릴리즈 태그'와 연관된 '마일스톤, 이슈' 정보로부터 '릴리즈 노트'를 자동으로 생성한다.
       - name: Create Release Notes

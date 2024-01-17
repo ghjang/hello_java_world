@@ -1,6 +1,11 @@
 name: Create tar.gz
 description: Create a tar.gz file from the 'target' folder
 
+inputs:
+  buildOutputFile:
+    description: The file path of the tar.gz file to create
+    required: true
+
 runs:
   # 'Composite Run Steps'라는 기능을 사용해 작성된 커스텀 액션이다.
   #
@@ -17,3 +22,6 @@ runs:
     - name: Run tar command
       run: ./.github/actions/create-tar-gz/create.sh
       shell: sh
+      env:
+        BUILD_OUTPUT_FILE: ${{ inputs.buildOutputFile }}
+
