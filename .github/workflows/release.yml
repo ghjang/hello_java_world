@@ -80,9 +80,10 @@ jobs:
 
       # '릴리즈 태그'와 연관된 '마일스톤, 이슈' 정보로부터 '릴리즈 노트'를 자동으로 생성한다.
       - name: Create Release Notes
-        uses: ghjang/actions/gen-release-notes@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: ghjang/actions/release-notes/generate@main
+        with:
+          authToken: ${{ secrets.GITHUB_TOKEN }}
+          projectName: Hello Java World!
 
       # NOTE: GitHub CLI를 사용하려면 GitHub 저장소 인증 정보가 필요하다. 인증 정보를 전달하는 가장 간단한 방법은
       #       'GH_TOKEN' 환경 변수에 저장소 인증 토큰인 'GITHUB_TOKEN'을 할당한 후에 'gh'등의 명령어를 사용하는 것이다.
@@ -91,7 +92,7 @@ jobs:
       #       GitHub CLI가 사용할 저장소 인증 토큰을 설정하는 방법을 사용하는 'ghjang/actions/set-up-gh-auth-token'
       #       커스텀 액션을 사용했다. 
       - name: Set up GitHub CLI
-        uses: ghjang/actions/set-up-gh-auth-token@main
+        uses: ghjang/actions/gh/set-auth-token@main
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
 
