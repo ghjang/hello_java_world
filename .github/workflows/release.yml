@@ -39,22 +39,21 @@ jobs:
       # 코드에서'${{ env.환경변수명 }}' 형태로 참조할 수 있다.
       - name: Set environment variables
         run: |
-          TAG_VERSION=${{ github.ref }} 
-          TAG_VERSION=${TAG_VERSION#refs/tags/release-}
-          echo "TAG_VERSION=${TAG_VERSION}" >> $GITHUB_ENV
+          RELEASE_VERSION=${{ github.ref }} 
+          RELEASE_VERSION=${RELEASE_VERSION#refs/tags/release-}
+          echo "RELEASE_VERSION=${RELEASE_VERSION}" >> $GITHUB_ENV
 
-          TAG_NAME=${{ github.ref }}
-          TAG_NAME=${TAG_NAME#refs/tags/}
-          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
-
-          BUILD_OUTPUT_FILE=hello_world_java-${TAG_VERSION}.tar.gz
+          # 아래 'Create tar.gz file for release' step에서 생성하는 'tar.gz' 파일명
+          BUILD_OUTPUT_FILE=hello_world_java-${RELEASE_VERSION}.tar.gz
           echo "BUILD_OUTPUT_FILE=${BUILD_OUTPUT_FILE}" >> $GITHUB_ENV
 
+          # 현재 릴리즈 버전에 대한 '릴리즈 노트' 파일명
           RELEASE_NOTES_DIR=_release-notes
-          RELEASE_NOTES_FILE=${RELEASE_NOTES_DIR}/${TAG_VERSION}.md
+          RELEASE_NOTES_FILE=${RELEASE_NOTES_DIR}/${RELEASE_VERSION}.md
           echo "RELEASE_NOTES_DIR=${RELEASE_NOTES_DIR}" >> $GITHUB_ENV
           echo "RELEASE_NOTES_FILE=${RELEASE_NOTES_FILE}" >> $GITHUB_ENV
 
+          # 모든 릴리즈 버전의 '릴리즈 노트'를 하나의 파일로 통합한 파일명
           COMBINED_RELEASE_NOTES_FILE=RELEASE_NOTES.md
           echo "COMBINED_RELEASE_NOTES_FILE=${COMBINED_RELEASE_NOTES_FILE}" >> $GITHUB_ENV
 
@@ -66,21 +65,22 @@ jobs:
           mvn -B package --file pom.xml
 
       # NOTE: 쉘 스크립트를 실행하거나 도커 컨테이너를 사용하도록 구성된 커스텀 액션의 경우 'GITHUB_REPOSITORY'등과 같은
-      #       워크플로우 job에 정의된 기본 환경변수와 'TAG_VERSION' 등의 사용자가 직접 설정한 환경변수값은 자동으로 전달된다.
+      #       워크플로우 job에 정의된 기본 환경변수와 'RELEASE_VERSION' 등의 사용자가 직접 설정한 환경변수값은 자동으로 전달된다.
       #       하지만 'GITHUB_TOKEN' 환경변수는 보안상의 이유로 자동으로 전달되지 않는다. 따라서 커스텀 액션에서 사용이 필요한
       #       경우에 'GITHUB_TOKEN' 환경변수 값을 명시적으로 전달해야 한다.
       #
       #       워크플로우 job에 정의된 기본 환경변수와 사용자 정의된 환경변수를 '.yml' 파일 자체에서 참조하는 문법은 다음과 같다:
       #         - ${{ github.<환경변수명> }} : 워크플로우 job에 정의된 기본 환경변수 참조. ex.> ${{ github.repository }}
-      #         - ${{ env.<환경변수명> }} : 사용자가 직접 정의한 환경변수 참조. ex.> ${{ env.TAG_VERSION }}
+      #         - ${{ env.<환경변수명> }} : 사용자가 직접 정의한 환경변수 참조. ex.> ${{ env.RELEASE_VERSION }}
       #
       #       커스텀 액션의 쉘 스크립트나 도커 컨테이너내에서는 전달된 환경변수를 '$<환경변수명>' 형태로 참조할 수 있다:
       #         - $GITHUB_<환경변수명> : 워크플로우 job에 정의된 기본 환경변수 참조. 환경변수명이 '대문자'로 바뀌어 있다.
       #                               ex.> $GITHUB_REPOSITORY
       #         - $<환경변수명> : 사용자가 직접 정의한 환경변수 참조. 'env.'과 같은 접두어는 필요없다.
-      #                        ex.> $TAG_VERSION
+      #                        ex.> $RELEASE_VERSION
 
       # '메이븐'으로 빌드한 결과물을 'tar.gz' 파일로 압축한다.
+      # 사용하는 로컬 커스텀 액션은 'buildOutputFile' 인자에 지정된 파일명으로 '.' 위치에 'tar.gz' 파일을 생성한다.
       - name: Create tar.gz file for release
         uses: ./.github/actions/create-tar-gz
         with:
@@ -94,7 +94,7 @@ jobs:
           projectName: Hello Java World!
           releaseNotesDir: ${{ env.RELEASE_NOTES_DIR }}
           combinedReleaseNotesFile: ${{ env.COMBINED_RELEASE_NOTES_FILE }}
-          releaseVersion: ${{ env.TAG_VERSION }}
+          releaseVersion: ${{ env.RELEASE_VERSION }}
 
       # NOTE: GitHub CLI를 사용하려면 GitHub 저장소 인증 정보가 필요하다. 인증 정보를 전달하는 가장 간단한 방법은
       #       'GH_TOKEN' 환경 변수에 저장소 인증 토큰인 'GITHUB_TOKEN'을 할당한 후에 'gh'등의 명령어를 사용하는 것이다.
@@ -107,22 +107,25 @@ jobs:
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create Release
-        run: |
-          gh release create ${{ github.ref }} \
-                      --repo ${{ github.repository }} \
-                      --target ${{ github.sha }} \
-                      --title "Release ${{ env.TAG_VERSION }}" \
-                      --notes-file ./${{ env.RELEASE_NOTES_FILE }}
+      - name: Create GitHub Release
+        uses: ghjang/actions/gh/create-release@main
+        with:
+          githubRef: ${{ github.ref }}
+          githubRepository: ${{ github.repository }}
+          githubSha: ${{ github.sha }}
+          releaseTitle: "Release ${{ env.RELEASE_VERSION }}"
+          releaseNotesFile: ./${{ env.RELEASE_NOTES_FILE }}
 
-      - name: Upload Release Asset
-        run: |
-          gh release upload ${{ env.TAG_NAME }} \
-                      --repo ${{ github.repository }} \
-                      ./${{ env.BUILD_OUTPUT_FILE }}
+      - name: Upload Release Asset to GitHub Release
+        uses: ghjang/actions/gh/upload-release-asset@main
+        with:
+          githubRef: ${{ github.ref }}
+          githubRepository: ${{ github.repository }}
+          buildOutputFile: ./${{ env.BUILD_OUTPUT_FILE }}
 
-      - name: Upload Combined Release Notes
-        run: |
-          gh release upload ${{ env.TAG_NAME }} \
-                      --repo ${{ github.repository }} \
-                      ./${{ env.COMBINED_RELEASE_NOTES_FILE }}
+      - name: Upload Combined Release Notes to GitHub Release
+        uses: ghjang/actions/release-notes/upload-combined-release-notes@main
+        with:
+          githubRef: ${{ github.ref }}
+          githubRepository: ${{ github.repository }}
+          combinedReleaseNotesFile: ./${{ env.COMBINED_RELEASE_NOTES_FILE }}
