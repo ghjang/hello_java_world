@@ -84,6 +84,7 @@ jobs:
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
           projectName: Hello Java World!
+          releaseVersion: ${{ env.TAG_VERSION }}
 
       # NOTE: GitHub CLI를 사용하려면 GitHub 저장소 인증 정보가 필요하다. 인증 정보를 전달하는 가장 간단한 방법은
       #       'GH_TOKEN' 환경 변수에 저장소 인증 토큰인 'GITHUB_TOKEN'을 할당한 후에 'gh'등의 명령어를 사용하는 것이다.
