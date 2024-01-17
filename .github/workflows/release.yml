@@ -50,6 +50,14 @@ jobs:
           BUILD_OUTPUT_FILE=hello_world_java-${TAG_VERSION}.tar.gz
           echo "BUILD_OUTPUT_FILE=${BUILD_OUTPUT_FILE}" >> $GITHUB_ENV
 
+          RELEASE_NOTES_DIR=_release-notes
+          RELEASE_NOTES_FILE=${RELEASE_NOTES_DIR}/${TAG_VERSION}.md
+          echo "RELEASE_NOTES_DIR=${RELEASE_NOTES_DIR}" >> $GITHUB_ENV
+          echo "RELEASE_NOTES_FILE=${RELEASE_NOTES_FILE}" >> $GITHUB_ENV
+
+          COMBINED_RELEASE_NOTES_FILE=RELEASE_NOTES.md
+          echo "COMBINED_RELEASE_NOTES_FILE=${COMBINED_RELEASE_NOTES_FILE}" >> $GITHUB_ENV
+
           cat $GITHUB_ENV
 
       - name: Build with Maven
@@ -84,6 +92,8 @@ jobs:
         with:
           authToken: ${{ secrets.GITHUB_TOKEN }}
           projectName: Hello Java World!
+          releaseNotesDir: ${{ env.RELEASE_NOTES_DIR }}
+          combinedReleaseNotesFile: ${{ env.COMBINED_RELEASE_NOTES_FILE }}
           releaseVersion: ${{ env.TAG_VERSION }}
 
       # NOTE: GitHub CLI를 사용하려면 GitHub 저장소 인증 정보가 필요하다. 인증 정보를 전달하는 가장 간단한 방법은
@@ -103,16 +113,16 @@ jobs:
                       --repo ${{ github.repository }} \
                       --target ${{ github.sha }} \
                       --title "Release ${{ env.TAG_VERSION }}" \
-                      --notes-file ./_release-notes/${{ env.TAG_VERSION }}.md
+                      --notes-file ./${{ env.RELEASE_NOTES_FILE }}
 
       - name: Upload Release Asset
         run: |
           gh release upload ${{ env.TAG_NAME }} \
                       --repo ${{ github.repository }} \
-                      ./hello_world_java-${{ env.TAG_VERSION }}.tar.gz
+                      ./${{ env.BUILD_OUTPUT_FILE }}
 
       - name: Upload Combined Release Notes
         run: |
           gh release upload ${{ env.TAG_NAME }} \
                       --repo ${{ github.repository }} \
-                      ./RELEASES_NOTES.md
+                      ./${{ env.COMBINED_RELEASE_NOTES_FILE }}
